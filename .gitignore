@@ -13,3 +13,6 @@ src/tex/figures/*
 # Miscellaneous
 __pycache__
 *.synctex.gz
+
+# vscode settings should be ignored.
+.vscode/settings.json
