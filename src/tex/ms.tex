@@ -6,51 +6,72 @@
 \begin{document}
 
 % Title
-\title{An open source scientific article}
+\title{LISA can measure the rate of eccentric binary black holes observed by ground-based detectors}
 
 % Author list
 \author{@katiebreivik}
 
 % Abstract with filler text
 \begin{abstract}
-    Lorem ipsum dolor sit amet, consectetuer adipiscing elit.
-    Ut purus elit, vestibulum ut, placerat ac, adipiscing vitae, felis.
-    Curabitur dictum gravida mauris, consectetuer id, vulputate a, magna.
-    Donec vehicula augue eu neque, morbi tristique senectus et netus et.
-    Mauris ut leo, cras viverra metus rhoncus sem, nulla et lectus vestibulum.
-    Phasellus eu tellus sit amet tortor gravida placerat.
-    Integer sapien est, iaculis in, pretium quis, viverra ac, nunc.
-    Praesent eget sem vel leo ultrices bibendum.
-    Aenean faucibus, morbi dolor nulla, malesuada eu, pulvinar at, mollis ac.
-    Curabitur auctor semper nulla donec varius orci eget risus.
-    Duis nibh mi, congue eu, accumsan eleifend, sagittis quis, diam.
-    Duis eget orci sit amet orci dignissim rutrum.
+    hype words about lisa, hype words about eccentricity, hype words about bbhs
 \end{abstract}
 
 % Main body with filler text
 \section{Introduction}
 \label{sec:intro}
 
-Lorem ipsum dolor sit amet, consectetuer adipiscing elit.
-Ut purus elit, vestibulum ut, placerat ac, adipiscing vitae, felis.
-Curabitur dictum gravida mauris, consectetuer id, vulputate a, magna.
-Donec vehicula augue eu neque, morbi tristique senectus et netus et.
-Mauris ut leo, cras viverra metus rhoncus sem, nulla et lectus vestibulum.
-Phasellus eu tellus sit amet tortor gravida placerat.
-Integer sapien est, iaculis in, pretium quis, viverra ac, nunc.
-Praesent eget sem vel leo ultrices bibendum.
-Aenean faucibus, morbi dolor nulla, malesuada eu, pulvinar at, mollis ac.
-Curabitur auctor semper nulla donec varius orci eget risus.
-Duis nibh mi, congue eu, accumsan eleifend, sagittis quis, diam.
-Duis eget orci sit amet orci dignissim rutrum.
+The environmnetal origins of BBHs are highly degenerate with the eccentricity of the binaries themselves. Thus, a measurement of the rate of eccentric BBHs provides the ability to constrain the relative contributions of isolated and dynamical formation envrionments. 
 
-Nam dui ligula, fringilla a, euismod sodales, sollici- tudin vel, wisi.
-Morbi auctor lorem non justo, nam lacus libero, pretium at, lobortis vitae.
-Donec aliquet, tortor sed accumsan bibendum, erat ligula aliquet magna.
-Morbi ac orci et nisl hendrerit mollis, suspendisse ut massa, cras nec ante.
-Pellentesque a nulla cum sociis natoque penatibus et magnis dis parturient.
-Aliquam tincidunt urna, nulla ullamcorper vestibulum turpis.
-Pellentesque cursus luctus mauris \citep{Luger2021}.
+\section{Rate Derivation}
+\label{sec:rates}
+Under the assumptions that most BBHs form in orbits with orbital frequencies below $\sim 1~\rm{mHz}$ and that the emission of GWs is the only driver of angular momentum loss in BBHs between the mHz and kHz GW regime, the rate of evolution of BBHs from the mHz to the kHz band can be described analytically using the \citet{Peters1964} evolution equations. Averaging the energy from GW emission, we can write the orbital separation and eccentricity evolution as a function of time as
+
+\begin{equation}
+    \Big\langle \frac{\mathrm{d}a}{\mathrm{d}t} \Big\rangle = - \frac{64}{5} \frac{G^3 m_1 m_2 (m_1 + m_2)}{c^5 a^3 (1 - e^2)^{7/2}} \Big(1 + \frac{73}{24} e^2 + \frac{37}{96} e^4 \Big)
+    \label{eq:dadt}
+\end{equation}
+
+\noindent and 
+
+\begin{equation}
+    \Big\langle\frac{\mathrm{d}e}{\mathrm{d}t}\Big\rangle = -\frac{304}{15} e \frac{G^3 m_1 m_2 (m_1 + m_2)}{c^5 a^4 (1-e^2)^{7/2}} \Big( 1 + \frac{121}{304} e^{2}\Big).
+    \label{eq:dedt}
+\end{equation}
+
+Using Kepler's third law, the orbital separation time evolution can be converted to an orbital frequency evolution 
+
+\begin{equation}
+    \Big\langle\frac{\mathrm{d}f}{\mathrm{d}t}\Big\rangle = \frac{48 n}{5 \pi} \frac{\Big(G \mathcal{M}_c \Big)^{5/3}}{c^5} (2 \pi f_{\rm orb})^{11/3} F(e), 
+    \label{eq:fdot}
+\end{equation}
+
+\noindent where 
+
+\begin{equation}
+    F(e) = \frac{1 + \frac{73}{24} e^2 + \frac{37}{96} e^4}{(1 - e^2)^{7/2}}.
+    \label{eq:eccentricity_enhancement_factor}
+\end{equation}
+
+The comoving merger rate density per unit chirp mass, $\mathcal{M}_c$ of BBHs can then be written as
+
+\begin{equation}
+    \frac{\mathrm{d}^2n}{\mathrm{d}\mathcal{M}_c \mathrm{d}t} = \mathcal{R}(\mathcal{M}_c) p(\mathcal{M}_c),
+    \label{eq:merger_rate_density}
+\end{equation}
+
+\noindent where $p(\mathcal{M}_c)$ is the chirp mass distribution observed by LVK. 
+
+This can be converted into a number of BBHs per unit mass, redshift, and frequency as
+
+\begin{equation}
+    \frac{\mathrm{d}^3N}{\mathrm{d}\mathcal{M}_c \mathrm{d}z \mathrm{d}f} = \frac{\mathrm{d}^2n}{\mathrm{d}\mathcal{M}_c \mathrm{d}t} \frac{\mathrm{d}V}{\mathrm{d}z} \frac{\mathrm{d}t}{\mathrm{d}f},
+    \label{eq:rate_per_freq}
+\end{equation}
+
+where $\mathrm{d}t / \mathrm{d}f$ is just the inverse of equation \ref{eq:fdot}.
+
+
+
 
 \bibliography{bib}
 
