@@ -2,6 +2,10 @@
 \documentclass[twocolumn]{aastex631}
 \usepackage{showyourwork}
 
+\newcommand{\dd}{\mathrm{d}}
+\newcommand{\diff}[2]{\frac{\dd #1}{\dd #2}}
+\newcommand{\MSun}{M_\odot}
+
 % Begin!
 \begin{document}
 
@@ -70,8 +74,78 @@ This can be converted into a number of BBHs per unit mass, redshift, and frequen
 
 where $\mathrm{d}t / \mathrm{d}f$ is just the inverse of equation \ref{eq:fdot}.
 
+\section{Relating Merger Rates to Binary Rates at Various Eccentricities}
 
+Let 
+\begin{equation}
+    \diff{N}{M_c \dd e \dd V \dd t} 
+\end{equation}
+be the compact object differential merger rate per chirp mass, per eccentricity,
+per comoving volume, and per time.  This is the quantity that LIGO measures or
+constrains, at least for compact objects in the range $1 \, \MSun \lesssim M_c
+\lesssim 100 \, \MSun$.  The merger rate is a function of the compact binary
+properties and also spacetime location (though homogeneity and isotropy
+assumptions restrict this to a dependence on time), but we suppress these
+arguments for simplicity except where necessary.  We can convert this to a
+binary rate per orbital frequency via the following argument.  Let 
+\begin{equation}
+    T_\mathrm{merger}\left( M_c, e, f \right)
+\end{equation}
+be the time until merger for a binary with chirp mass $M_c$, eccentricity $e$,
+and orbital frequency $f$.  Then the compact binary rate at any given time is
+obtained as an integral of the merger rate over the \emph{future} mergers of the
+binaries occupying an infinitesimal range of frequencies $\dd f$:
+\begin{multline}
+    \diff{N}{M_c \dd e \dd V \dd f}\left( t \right) = \int_{t}^{\infty} \dd t' \, \diff{N}{M_c \dd e \dd V \dd t'} \\ \times \delta\left( \left( t' - t \right) - T_\mathrm{merger}\left( M_c, e, f \right) \right) \frac{\partial T_\mathrm{merger}}{\partial f}.
+\end{multline}
+The Dirac delta function ensures that the only merger times that contribute to
+the integral are those for a binary of chirp mass $M_c$, eccentricity $e$, and
+orbital frequency $f$ at time $t$.  The final Jacobian factor converts from a
+density in \emph{time} (implied by the delta function) to a density in
+\emph{frequency}.  The integral is trivial; assuming that $T_\mathrm{merger}$ is
+much smaller than any timescale on which the merger rate evolves, the binary
+rate per frequency at time $t$ is just the merger rate (in the very near future)
+times the Jacobian factor to translate a density in time to a density in
+frequency:
+\begin{equation}
+    \label{eq:mergers-per-frequency}
+    \diff{N}{M_c \dd e \dd V \dd f} = \diff{N}{M_c \dd e \dd V \dd t} \frac{\partial T_\mathrm{merger}}{\partial f}.
+\end{equation}
 
+Note that $e$ in Eq.\ \eqref{eq:mergers-per-frequency}, appearing in the
+denominator of the rate densities and (implicitly) in their arguments and the
+arguments of $T_\mathrm{merger}$ refers to the eccentricity of the system
+\emph{at merger}.  It is natural to write the rate density per eccentricity
+\emph{at the time when the orbital frequency is $f$}.  There is a natural
+mapping from merger eccentricity to eccentricity at frequency $f$, defined
+(implicitly) by Eqs.\ \eqref{eq:dedt}, and \eqref{eq:fdot}; let
+$e'$ be the eccentricity at frequency $f$ and 
+\begin{equation}
+    e = E\left( e', f, M_c \right)
+\end{equation}
+be the eccentricity at merger of a system with chirp mass $M_c$ that has
+eccentricity $e'$ at orbital frequency $f$.  Then 
+\begin{equation}
+    \diff{N}{M_c \dd e' \dd V \dd f} = \diff{N}{M_c \dd e \dd V \dd f} \frac{\partial E}{\partial e'}
+\end{equation}
+is the binary rate per chirp mass, per eccentricity (at orbital frequency $f$),
+per comoving volume, per orbital frequency.  
+
+If the eccentricity evolution satisfies 
+\begin{equation}
+    \frac{\partial E}{\partial f}\left( e', f, M_c \right) = g\left( E, f \right),
+\end{equation}
+where $g$ is obtained as the ratio of the right hand sides of Eqs.\
+\eqref{eq:dedt}, and \eqref{eq:fdot}, then (differentiating both sides of this
+equation by the eccentricity $e'$) the Jacobian 
+\begin{equation}
+    J \equiv \frac{\partial E}{\partial e'}
+\end{equation}
+satisfies 
+\begin{equation}
+    \frac{\partial}{\partial f} J = \frac{\partial g}{\partial E} J.
+\end{equation}
+This is a linear ODE for $J$, and 
 
 \bibliography{bib}
 
