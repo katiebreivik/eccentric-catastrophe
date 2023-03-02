@@ -5,6 +5,8 @@ on:
     workflows: [build pull request]
     types: [completed]
 
+permissions: write-all
+
 jobs:
   process-pr:
     runs-on: ubuntu-latest
