@@ -53,13 +53,15 @@ def get_t_evol_LISA(dat):
             output_vars=["a", "f_orb"])
     
     else:
-        timesteps = create_timesteps(t_evol = -(10000/e_LIGO)* u.yr, nstep_fast=50 * max(1, int(0.5 * e_LIGO/1e-4)))
+        timesteps = create_timesteps(t_evol = -(100000000000/e_LIGO)* u.yr, nstep_fast=50 * max(1, int(0.5 * e_LIGO/1e-4)))
         a_evol, e_evol, f_evol = evol.evol_ecc(
             m_1=m1, m_2=m2, f_orb_i=f_LIGO, ecc_i=e_LIGO, timesteps=timesteps,
             t_before=0.01*u.yr, output_vars=["a", "ecc", "f_orb"], avoid_merger=False)
     
     t_interp = interp1d(a_evol, timesteps)
     a_lo = utils.get_a_from_f_orb(m_1=m1, m_2=m2, f_orb=freq_evol)  
+    if a_lo < min(a_evol):
+        print(a_lo, min(a_evol), m1, e_LIGO)
     t_LISA = t_interp(a_lo)
 
     return t_LISA
@@ -90,14 +92,17 @@ def get_LISA_norm(dat):
     m2 = m2 * u.Msun
     f_LIGO=10 * u.Hz
     # get time to merger for f_LISA = 1e-4 Hz
-    t_evol = get_t_evol_LISA(m1, m2, e_LIGO, f_LIGO)
+    dat = [m1, m2, e_LIGO]
+    
+    #t_evol = get_t_evol_LISA(dat)
     
     # create timesteps
-    timesteps = get_t_evol_from_f(m1, m2, e_LIGO, f_LIGO)
-    
+    timesteps = get_t_evol_from_f(m1, m2, e_LIGO)
+    print(t_evol)
     f_orb_evol, ecc_evol = evol.evol_ecc(
         m_1=m1, m_2=m2, f_orb_i=f_LIGO, ecc_i=e_LIGO, timesteps=timesteps,
         t_before=0.01*u.yr, output_vars=["f_orb", "ecc"], avoid_merger=False)
+    print(f_orb_evol)
     if e_LIGO > 0:
         lnJ = -cumtrapz(dg_de(f_orb_evol, ecc_evol), f_orb_evol, initial=0)
         de_deprime = np.exp(lnJ)
