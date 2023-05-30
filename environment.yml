@@ -4,3 +4,6 @@ dependencies:
   - conda-forge::python=3.9
   - pip:
       - matplotlib==3.4.3
+      - legwork
+      - astropy
+      - scipy
