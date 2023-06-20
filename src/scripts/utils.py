@@ -98,7 +98,6 @@ def get_LISA_norm(dat):
     
     # create timesteps
     timesteps = get_t_evol_from_f(m1, m2, e_LIGO)
-    print(t_evol)
     f_orb_evol, ecc_evol = evol.evol_ecc(
         m_1=m1, m_2=m2, f_orb_i=f_LIGO, ecc_i=e_LIGO, timesteps=timesteps,
         t_before=0.01*u.yr, output_vars=["f_orb", "ecc"], avoid_merger=False)
