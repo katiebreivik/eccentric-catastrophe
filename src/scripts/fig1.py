@@ -50,11 +50,9 @@ def ligo_rate(m1):
     
     return interp_rate(m1)
 
-n_grid = 25
-
 # set up the grids
-f = np.logspace(-1, -5, 100) * u.Hz
-masses = np.arange(5, 80.2, 0.2)
+f = np.logspace(-1, -5, 1000) * u.Hz
+masses = np.arange(5, 80.2, 0.1)
 m_c = lw.utils.chirp_mass(masses, masses)
 
 # set up bins
@@ -95,7 +93,8 @@ N_per_mass = np.zeros(len(masses)) * u.Msun**(-1)
 for ii, m in enumerate(masses):
     N_per_mass[ii] = trapz(RATE[ii,:] / f_dot[ii,:] * horizon_comoving_volume[ii,:], -f)
 
-
+N_LISA_obs=trapz(N_per_mass, masses)
+print(N_LISA_obs)
 fig, ax = plt.subplots(figsize=(6, 4))
 ax.plot(masses, N_per_mass, lw=3, label=r"LISA")
 ax.plot(masses, ligo_rate(masses)/45, lw=2, label=r"LIGO")

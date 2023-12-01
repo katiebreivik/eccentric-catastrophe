@@ -44,7 +44,7 @@ In the case where all mering binaries are perfectly circular, the rate calculati
 Using Kepler's third law, the orbital separation evolution can be converted to an orbital frequency evolution
 
 \begin{equation}
-    \Big\langle\frac{\mathrm{d}f_{\rm orb}}{\mathrm{d}t}\Big\rangle = \frac{48}{5 \pi} \frac{\Big(G \mathcal{M}_c \Big)^{5/3}}{c^5} (2 \pi f_{\rm orb})^{11/3}, 
+    \Big\langle\frac{\mathrm{d}f_{\rm orb}}{\mathrm{d}t}\Big\rangle = \frac{48}{5 \pi} \frac{\big(G \mathcal{M}_c \big)^{5/3}}{c^5} (2 \pi f_{\rm orb})^{11/3}, 
     \label{eq:fdot_circ}
 \end{equation}
 \noindent a slight modification to the familiar chirp equation such that $\langle\mathrm{d}f_{\rm GW}/\mathrm{d}t\rangle = 2\,\langle\mathrm{d}f_{\rm orb}/\mathrm{d}t\rangle$. 
@@ -61,14 +61,15 @@ The comoving merger rate density per unit chirp mass, $\mathcal{M}_c$ of BBHs ca
 This can be converted into a number of BBHs per unit mass, redshift, and orbital frequency as
 
 \begin{equation}
-    \frac{\mathrm{d}^3N}{\mathrm{d}\mathcal{M}_c \mathrm{d}V_c \mathrm{d}f_{\rm orb}} = \frac{\mathrm{d}^3n}{\mathrm{d}\mathcal{M}_c \mathrm{d}t \mathrm{d}V_c} \frac{\mathrm{d}t}{\mathrm{d}f_{\rm orb}},
+    %\frac{\mathrm{d}^3N}{\mathrm{d}\mathcal{M}_c \mathrm{d}V_c \mathrm{d}f_{\rm orb}} = \frac{\mathrm{d}^3n}{\mathrm{d}\mathcal{M}_c \mathrm{d}t \mathrm{d}V_c} \frac{\mathrm{d}t}{\mathrm{d}f_{\rm orb}},
+    \frac{\mathrm{d}^3N}{\mathrm{d}M_1 \mathrm{d}V_c \mathrm{d}f_{\rm orb}} = \frac{\mathrm{d}^3n}{\mathrm{d}M_1 \mathrm{d}t \mathrm{d}V_c} \frac{\mathrm{d}t}{\mathrm{d}f_{\rm orb}},
     \label{eq:rate_per_freq}
 \end{equation}
 
 where $\mathrm{d}t / \mathrm{d}f_{\rm orb}$ is just the inverse of equation \ref{eq:fdot_circ}. This rate can be integrated to determine the total number of BBHs LISA is expected to observe based on the observed rates by LVK as 
 
 \begin{equation}
-    \mathrm{N_{LISA}} = \int\mathrm{d}f_{\rm orb} \int\mathrm{d}V_{c} \int\mathrm{d}\mathcal{M}_c \frac{\mathrm{d}^3N}{\mathrm{d}\mathcal{M}_c \mathrm{d}V_c \mathrm{d}f_{\rm orb}}.
+    \frac{\mathrm{dN_{LISA}}}{\mathrm{d}M_1}= \int\mathrm{d}f_{\rm orb} \int\mathrm{d}V_{c} \frac{\mathrm{d}^3N}{\mathrm{d}M_1 \mathrm{d}V_c \mathrm{d}f_{\rm orb}}.
 \end{equation}
 
 Assuming the BBH merger rate per unit chirp mass from GWTC-3 and a detection threshold of $SNR > 12$ (CITE GEROSA), the number of BBHs detectable by LISA is $1.085$ with the chirp mass distribution shown in Figure~\ref{fig:circ_Mdist}. While the GWTC-3 rate peaks strongly at low chirp masses near $8\,\mathrm{M_{\odot}}$, the chirp mass probability distribution for LISA traces the $35\,\mathrm{M_{\odot}}$ peak in the GWTC-3 rate. This is due to LISA's much smaller horizon volume when compared with ground-based detectors such that only the more-massive BBHs are expected to be observed with an appreciable probability. This can be seen as the LISA pdf increases toward $8\,\rm{M_{\odot}}$ but flattens even in though the GWTC-3 rate decreases; this is because of the increased LISA horizon volume with mass. At masses above $35\,\mathrm{M_{\odot}}$, the GWTC-3 rate decreases by more than two orders of magnitude and overcomes the increase in horizon volume with increasing mass thus suppressing the probability of detection.
@@ -134,7 +135,8 @@ and orbital frequency $f$ mergers.  Then the compact binary rate per unit freque
 obtained as an integral of the merger rate over the \emph{future} mergers of the
 binaries occupying an infinitesimal range of frequencies $\dd f$:
 \begin{multline}
-    \diff{N}{M_c \dd e \dd V \dd f}\left( t \right) = \int_{t}^{\infty} \dd t' \, \diff{N}{M_c \dd e \dd V \dd t'} \\ \times \delta\left( \left( t' - t \right) - T_\mathrm{merger}\left( M_c, e, f \right) \right) \frac{\partial T_\mathrm{merger}}{\partial f}.
+    %\diff{N}{M_c \dd e \dd V \dd f}\left( t \right) = \int_{t}^{\infty} \dd t' \, \diff{N}{M_c \dd e \dd V \dd t'} \\ \times \delta\left( \left( t' - t \right) - T_\mathrm{merger}\left( M_c, e, f \right) \right) \frac{\partial T_\mathrm{merger}}{\partial f}.
+    \diff{N}{M_1 \dd e \dd V \dd f}\left( t \right) = \int_{t}^{\infty} \dd t' \, \diff{N}{M_1 \dd e \dd V \dd t'} \\ \times \delta\left( \left( t' - t \right) - T_\mathrm{merger}\left( M_1, e, f \right) \right) \frac{\partial T_\mathrm{merger}}{\partial f}
 \end{multline}
 The Dirac delta function ensures that the only merger times that contribute to
 the integral are those for a binary of chirp mass $M_c$, eccentricity $e$, and
@@ -147,7 +149,14 @@ times the Jacobian factor to translate a density in time to a density in
 frequency:
 \begin{equation}
     \label{eq:mergers-per-frequency}
-    \diff{N}{M_c \dd e \dd V \dd f} = \diff{N}{M_c \dd e \dd V \dd t} \frac{\partial T_\mathrm{merger}}{\partial f}.
+    %\diff{N}{M_c \dd e \dd V \dd f} = \diff{N}{M_c \dd e \dd V \dd t} \frac{\partial T_\mathrm{merger}}{\partial f}.
+    \diff{N}{M_1 \dd e_{10} \dd V \dd f} = \diff{N}{M_1 \dd e_{10} \dd V \dd t} \frac{\partial T_\mathrm{merger}}{\partial f}
+\end{equation}
+
+\begin{equation}
+    \label{eq:mergers-per-frequency}
+    %\diff{N}{M_c \dd e \dd V \dd f} = \diff{N}{M_c \dd e \dd V \dd t} \frac{\partial T_\mathrm{merger}}{\partial f}.
+    \diff{N}{M_1 \dd e_{\rm LISA} \dd V \dd f} = \diff{N}{M_1 \dd e_{10} \dd V \dd t} \frac{\partial T_\mathrm{merger}}{\partial f} \frac{\partial E}{\partial e_{\rm LISA}}
 \end{equation}
 
 Note that $e$ in Eq.\ \eqref{eq:mergers-per-frequency}, appearing in the
@@ -159,7 +168,7 @@ mapping from merger eccentricity to eccentricity at frequency $f$, defined
 (implicitly) by Eqs.\ \eqref{eq:dedt}, and \eqref{eq:fdot}; let
 $e'$ be the eccentricity at frequency $f$ and 
 \begin{equation}
-    e = E\left( e', f, M_c \right)
+    e_{10} = E\left( e_{\rm LISA}, f, M_c \right)
 \end{equation}
 be the eccentricity at merger of a system with chirp mass $M_c$ that has
 eccentricity $e'$ at orbital frequency $f$.  Then 
@@ -171,7 +180,7 @@ per comoving volume, per orbital frequency.
 
 If the eccentricity evolution satisfies 
 \begin{equation}
-    \frac{\partial E}{\partial f}\left( e', f, M_c \right) = g\left( E, f \right),
+    \frac{\partial E}{\partial f}\left( e_{\rm LISA}, f, M_c \right) = g\left( E, f \right),
 \end{equation}
 where $g$ is obtained as the ratio of the right hand sides of Eqs.\
 \eqref{eq:dedt}, and \eqref{eq:fdot}, then (differentiating both sides of this
