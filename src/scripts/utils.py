@@ -6,7 +6,7 @@ from astropy.cosmology import Planck18, z_at_value
 
 import numpy as np
 from scipy.integrate import cumtrapz
-from scipy.interpolate import interp1d
+from scipy.interpolate import interp1d, NearestNDInterpolator
 
 def dg_de(f, e):
     prefac = 76 / 243 * (1 / f) * 18/19
@@ -48,15 +48,15 @@ def get_t_evol_LISA(dat):
     if e_LIGO.all() == 0:
         timesteps = create_timesteps(t_evol = -(100000000000)* u.yr, nstep_fast=50 * max(1, int(0.5 * e_LIGO/1e-4)))
 
-        a_evol, f_evol = evol.evol_circ(
+        a_evol = evol.evol_circ(
             m_1=m1, m_2=m2, f_orb_i=f_LIGO, timesteps=timesteps,
-            output_vars=["a", "f_orb"])
+            output_vars=["a"])
     
     else:
-        timesteps = create_timesteps(t_evol = -(100000000000/e_LIGO)* u.yr, nstep_fast=50 * max(1, int(0.5 * e_LIGO/1e-4)))
-        a_evol, e_evol, f_evol = evol.evol_ecc(
+        timesteps = create_timesteps(t_evol = -(10000/e_LIGO)* u.yr, nstep_fast=50 * max(1, int(0.5 * e_LIGO/1e-4)))
+        a_evol = evol.evol_ecc(
             m_1=m1, m_2=m2, f_orb_i=f_LIGO, ecc_i=e_LIGO, timesteps=timesteps,
-            t_before=0.01*u.yr, output_vars=["a", "ecc", "f_orb"], avoid_merger=False)
+            t_before=0.01*u.yr, output_vars=["a"], avoid_merger=False)
     
     t_interp = interp1d(a_evol, timesteps)
     a_lo = utils.get_a_from_f_orb(m_1=m1, m_2=m2, f_orb=freq_evol)  
@@ -75,12 +75,13 @@ def get_t_evol_from_f(m1, m2, e_LIGO=1e-5, f_LIGO=10*u.Hz, log_f_LISA_lo=-5, log
             output_vars=["a", "f_orb"])
     
     else:
-        timesteps = create_timesteps(t_evol = -(1000/e_LIGO)* u.yr, nstep_fast=50 * max(1, int(0.5 * e_LIGO/1e-4)))
-        a_evol, e_evol, f_evol = evol.evol_ecc(
+        timesteps = create_timesteps(t_evol = -(10000/e_LIGO)* u.yr, nstep_fast=50 * max(1, int(0.5 * e_LIGO/1e-4)))
+        f_evol = evol.evol_ecc(
             m_1=m1, m_2=m2, f_orb_i=f_LIGO, ecc_i=e_LIGO, timesteps=timesteps,
-            t_before=0.01*u.yr, output_vars=["a", "ecc", "f_orb"], avoid_merger=False)
+            t_before=0.01*u.yr, output_vars=["f_orb"], avoid_merger=False)
     t_interp = interp1d(f_evol, timesteps)
-    f_grid = np.logspace(log_f_LISA_lo, log_f_LISA_hi, n_f_grid)
+    #flip because we are integrating backward
+    f_grid = np.flip(np.logspace(log_f_LISA_lo, log_f_LISA_hi, n_f_grid))
     t_LISA = t_interp(f_grid) * u.s
     
     return t_LISA
@@ -91,17 +92,11 @@ def get_LISA_norm(dat):
     m1 = m1 * u.Msun
     m2 = m2 * u.Msun
     f_LIGO=10 * u.Hz
-    # get time to merger for f_LISA = 1e-4 Hz
-    dat = [m1, m2, e_LIGO]
-    
-    #t_evol = get_t_evol_LISA(dat)
-    
     # create timesteps
     timesteps = get_t_evol_from_f(m1, m2, e_LIGO)
     f_orb_evol, ecc_evol = evol.evol_ecc(
         m_1=m1, m_2=m2, f_orb_i=f_LIGO, ecc_i=e_LIGO, timesteps=timesteps,
         t_before=0.01*u.yr, output_vars=["f_orb", "ecc"], avoid_merger=False)
-    print(f_orb_evol)
     if e_LIGO > 0:
         lnJ = -cumtrapz(dg_de(f_orb_evol, ecc_evol), f_orb_evol, initial=0)
         de_deprime = np.exp(lnJ)
@@ -133,4 +128,31 @@ def get_LISA_norm_circular(dat):
     LISA_norm = -1 * dTmerger_df(m1, m2, f_orb_evol, ecc_evol) * de_deprime
 
     return f_orb_evol, ecc_evol, timesteps, LISA_norm
+
+
+def get_D_horizon(m1, m2, e, f, dat_load):
+    #Msun, Msun, Hz, Mpc
+    M1, M2, E, F, D_horizon = dat_load
+    dat_interp = list(zip(M1.flatten(), M2.flatten(), F.flatten(), E.flatten()))
+    interp = NearestNDInterpolator(dat_interp, D_horizon.flatten())
+
+    D_H_interp = interp(m1, m2, e, f)
+
+    return D_H_interp * u.Mpc
+
+def get_norms(dat_in):
+    m1, m2, e, dat_load = dat_in
+    dat = [m1, m2, e]
+    f_orb_evol, ecc_evol, timesteps, LISA_norm = get_LISA_norm(dat)
+    ind, = np.where(f_orb_evol < 0.1 * u.Hz)
+    D_h = get_D_horizon(
+        m1*np.ones_like(ind), m2*np.ones_like(ind), 
+        ecc_evol[ind], f_orb_evol[ind], dat_load)
+    redshift = np.ones(len(D_h)) * 1e-8
+    redshift[D_h > 1 * u.kpc] = z_at_value(Planck18.luminosity_distance, D_h[D_h > 1 * u.kpc])
+    V_c = Planck18.comoving_volume(z=redshift)    
+
+    dat_out = [LISA_norm[ind], timesteps[ind], ecc_evol[ind], f_orb_evol[ind], D_h, redshift, V_c]
+    return dat_out
+
     
