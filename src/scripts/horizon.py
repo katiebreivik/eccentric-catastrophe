@@ -1,41 +1,57 @@
 import numpy as np
-import matplotlib.pyplot as plt
 import legwork as lw
 import astropy.units as u
-import tqdm
-from astropy.cosmology import Planck18, z_at_value
-from scipy.integrate import trapz
-from schwimmbad import MultiPool
+import argparse
 
-e_grid = np.logspace(-3, np.log10(1-0.01), 5)
-mass1_range = np.logspace(np.log10(5), np.log10(80), 50)
-mass2_range = np.logspace(np.log10(5), np.log10(80), 50)
-f_grid = np.logspace(-4, -1.5, 1000)
+def save_horizon_grid(fname='horizon_dat'):
+    '''Calculate the LISA horizon distance on a 
+    regular grid of masses, eccentricities, and frequencies
 
-def get_d_h(e):
-    m1_list = []
-    m2_list = []
-    e_list = []
-    f_list = []
-    for m1 in mass1_grid:
-        for m2 in mass2_grid:
-            if m2 < m1:
-                             
-                e_list.extend(np.zeros(len(f_grid)) * 0)
-                m1_list.extend(np.ones(len(f_grid)) * m1)
-                m2_list.extend(np.ones(len(f_grid)) * m2)
-                f_list.extend(f_grid)
-                                
-    source = lw.source.Source(m_1=m1_list * u.Msun,
-                              m_2=m2_list * u.Msun,
-                              ecc=e_list,
-                              f_orb=f_list*u.Hz,
-                              dist=8 * np.ones(len(e_list)) * u.Mpc,
+    Parameters
+    ----------
+    fname : 'str'
+        Name of file to save horizon distance and grid array
+
+    Returns
+    -------
+    None
+    '''
+    
+    e_grid = np.array([0.001, 0.003, 0.007, 0.01, 0.03, 0.07, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.85])
+    mass_grid = np.logspace(np.log10(5), np.log10(80), 15)
+    q_grid = np.linspace(0.1, 1, 15)
+    f_grid = np.logspace(-4, -1.0, 100)
+    
+    M1, Q, E, F = np.meshgrid(mass_grid, q_grid, e_grid, f_grid)
+    M2 = M1 * Q   
+    
+    source = lw.source.Source(m_1=M1.flatten() * u.Msun,
+                              m_2=M2.flatten() * u.Msun,
+                              ecc=E.flatten(),
+                              f_orb=F.flatten()*u.Hz,
+                              dist=8 * np.ones(len(E.flatten())) * u.Mpc,
                               interpolate_g=True)
-                                  
+                                      
     snr = source.get_snr(approximate_R=True, verbose=False)
     
-    return snr
+    snr_thresh = 12.0
+    D_horizon = snr / snr_thresh * 8 * u.Mpc
+    D_horizon = np.reshape(D_horizon, M1.shape)
+    
+    dat_all = np.array([M1, M2, E, F, D_horizon.value])
+    np.save(fname, dat_all, allow_pickle=True)
 
-with MultiPool(processes=4) as pool:
-    values = list(pool.map(get_d_h, list(e_grid)))
+    return
+
+if __name__=='__main__':
+
+    # set up the argparser
+    parser = argparse.ArgumentParser(
+                    prog='horizon',
+                    description='Calculate the horizon distance for LISA on a grid')
+
+    parser.add_argument('-f', '--fname')      # option that takes a value
+
+    args = parser.parse_args()
+
+    _= save_horizon()
