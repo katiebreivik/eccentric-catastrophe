@@ -51,13 +51,8 @@ def ligo_rate(m1):
     return interp_rate(m1)
 
 # set up the grids
-<<<<<<< HEAD
 f = np.logspace(-1, -5, 150) * u.Hz
 masses = np.arange(5, 80.2, 0.05)
-=======
-f = np.logspace(-1, -5, 1000) * u.Hz
-masses = np.arange(5, 80.2, 0.1)
->>>>>>> 11920ecf7f7cfb44b8296f6f350ab0d67ee375ac
 m_c = lw.utils.chirp_mass(masses, masses)
 
 # set up bins
