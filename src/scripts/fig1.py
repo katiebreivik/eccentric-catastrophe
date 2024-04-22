@@ -78,11 +78,12 @@ source = lw.source.Source(m_1=MASS.flatten(),
 snr = source.get_snr(approximate_R=False, verbose=True)
 SNR_resolve = 12
 D_h = snr/SNR_resolve * 8 * u.Mpc
+horizon_comoving_volume = 4/3 * np.pi * D_h**3
 redshift = np.ones(len(D_h)) * 1e-8
 redshift[D_h > 0.0001 * u.Mpc] = z_at_value(Planck18.luminosity_distance, D_h[D_h > 0.0001 * u.Mpc])
-horizon_comoving_volume = Planck18.comoving_volume(z=redshift)
+horizon_comoving_volume[D_h > 0.0001 * u.Mpc] = Planck18.comoving_volume(z=redshift[D_h > 0.0001 * u.Mpc])
 horizon_comoving_volume = horizon_comoving_volume.reshape(RATE.shape)
-D_h = D_h.reshape(RATE.shape)
+#D_h = D_h.reshape(RATE.shape)
 
 # calculate the chirp
 f_dot = lw.utils.fn_dot(m_c = MC.flatten(), e = np.zeros(len(MC.flatten())), n=2, f_orb=F.flatten())
