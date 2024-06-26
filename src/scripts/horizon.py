@@ -20,7 +20,7 @@ def save_horizon_grid(fname='horizon_dat'):
     e_grid = np.array([0.001, 0.003, 0.007, 0.01, 0.03, 0.07, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.85])
     mass_grid = np.logspace(np.log10(5), np.log10(80), 15)
     q_grid = np.linspace(0.1, 1, 15)
-    f_grid = np.logspace(-4, -1.0, 100)
+    f_grid = np.logspace(-5, -1.0, 500)
     
     M1, Q, E, F = np.meshgrid(mass_grid, q_grid, e_grid, f_grid)
     M2 = M1 * Q   

@@ -8,6 +8,11 @@ import numpy as np
 from scipy.integrate import cumulative_trapezoid
 from scipy.interpolate import interp1d, NearestNDInterpolator
 
+def chirp_mass(m1, m2):
+
+    return (m1 * m2)**(5/3) / (m1 + m2)**(1/5)
+
+
 def dg_de(f, e):
     prefac = 1 / (3 * f)
     numerator = (4477 * e**8 + 99225 * e**6 + 145260 * e**4 + 141472 * e**2 - 29184)
@@ -17,26 +22,10 @@ def dg_de(f, e):
     
     
 def dTmerger_df(m1, m2, f, e):
-    beta = lw.utils.beta(m1, m2)
     ecc_fac = (1 - e**2)**(7/2) * (1 + 0.27 * e**10 + 0.33 * e**20 + 0.2 * e**1000)
-    dt_df = -2 / 3 * (c.G * (m1 + m2) / (4 * np.pi**2))**(4/3) / beta * f**(-11/3)
+    dt_df = -5 * np.pi / 48 * c.c**5/(c.G * lw.utils.chirp_mass(m1, m2))**(5/3) * (2 * np.pi * f)**(-11/3)
     
     return ecc_fac * dt_df
-
-#def dTmerger_df(m1, m2, f, e):
-#    #beta = lw.utils.beta(m1, m2)
-#    m_c = lw.utils.chirp_mass(m1, m2)
-#    ecc_fac = (1 + (73/24) * e**2 + (37/96) * e**4) / (1 - e**2)**(7/2)
-#
-#     dt_df = 5 * np.pi / 48 * (c.c**5/(c.G * m_c)**(5/3)) * (2*np.pi*f)**(-11/3) * ecc_fac
-#    
-#    return dt_df
-
-def dTmerger_df_circ(m1, m2, f):
-    beta = lw.utils.beta(m1, m2)
-    dt_df = -2 / 3 * (c.G * (m1 + m2) / (4 * np.pi**2))**(4/3) / beta * f**(-11/3)
-    
-    return dt_df
 
 def create_timesteps(t_evol=-100*u.yr, nstep_fast=1000, nstep=100):
     t_chunks = np.logspace(0, np.log10(-1*t_evol.to(u.s).value), nstep)
@@ -104,10 +93,15 @@ def get_t_evol_from_f(m1, m2, e_LIGO=1e-5, f_LIGO=10*u.Hz, log_f_LISA_lo=-5, log
     
 
 
-def get_LISA_params(m1, m2, e_LIGO, a_LIGO):
+def get_LISA_params(m1, m2, e_LIGO, a_LIGO, f_LISA_lo=1e-4 * u.Hz, f_LISA_hi=0.1 * u.Hz, n_LISA_step=100):
     if e_LIGO > 0.0:
         e_max = 0.99995
-        e_grid_steps = 1000
+        if e_LIGO >= 1e-3:
+            e_grid_steps = 10000
+        elif e_LIGO >= 1e-4:
+            e_grid_steps = 5000
+        else:
+            e_grid_steps = 500
         e_grid = np.logspace(np.log10(e_LIGO), np.log10(e_max), e_grid_steps)
         a_grid = lw.utils.get_a_from_ecc(e_grid, lw.utils.c_0(a_i=a_LIGO, ecc_i=e_LIGO))
         log_a_interp = interp1d(a_grid.to(u.Rsun).value, e_grid)
@@ -219,23 +213,21 @@ def get_horizon(dat_in, snr_thresh=12):
 
     return d_horizon
 
-#def get_D_horizon(m1, m2, e, f, dat_load):
-#    #Msun, Msun, Hz, Mpc
-#    M1, M2, E, F, D_horizon = dat_load
-#    dat_interp = list(zip(M1.flatten(), M2.flatten(), F.flatten(), E.flatten()))
-#    interp = NearestNDInterpolator(dat_interp, D_horizon.flatten())
-
-#    D_H_interp = interp(m1, m2, e, f)
-
-#    return D_H_interp * u.Mpc
+def get_D_horizon(m1, m2, e, f, dat_load):
+    #Msun, Msun, Hz, Mpc
+    M1, M2, E, F, D_horizon = dat_load
+    dat_interp = list(zip(M1.flatten(), M2.flatten(), F.flatten(), E.flatten()))
+    interp = NearestNDInterpolator(dat_interp, D_horizon.flatten())
+    D_H_interp = interp(m1, m2, e, f)
+    return D_H_interp * u.Mpc
 
 def get_norms(dat_in, f_LIGO=10*u.Hz):
-    m1, m2, e_LIGO = dat_in
+    m1, m2, e_LIGO, horizon_interp = dat_in
     a_LIGO = lw.utils.get_a_from_f_orb(m_1=m1, m_2=m2, f_orb=f_LIGO) 
     dat_out = get_LISA_params(m1, m2, e_LIGO, a_LIGO)
     f_LISA_grid, e_LISA_grid, t_merge_LISA_grid, f_dot_orb_LISA_grid, t_evol = dat_out
-    dat_in_horizon = [m1, m2, e_LISA_grid, f_LISA_grid, t_evol] = dat_in
-    D_h = get_horizon(dat_in_horizon, snr_thresh=12)
+    #dat_in_horizon = [m1, m2, e_LISA_grid, f_LISA_grid, t_evol] = dat_in
+    D_h = get_D_horizon(m1, m2, e_LISA_grid, f_LISA_grid, horizon_interp)
     
     redshift = np.ones(len(D_h)) * 1e-8
     redshift[D_h > 10 * u.kpc] = z_at_value(Planck18.luminosity_distance, D_h[D_h > 10 * u.kpc])
