@@ -4,105 +4,181 @@ import legwork as lw
 import astropy.units as u
 from scipy.interpolate import interp1d
 from astropy.cosmology import Planck18, z_at_value
-from scipy.integrate import trapz
+from scipy.integrate import trapezoid
 import paths
+import deepdish as dd
+from schwimmbad import MultiPool
+import tqdm
+import utils
 
-def ligo_rate(m1):
-    dat = np.array([[3.705799151343708, 0.001087789470121345],
-                   [4.384724186704389, 0.00984816875074369],
-                   [5.063649222065067, 0.06979974252228799],
-                   [5.827439886845831, 0.41173514594201527],
-                   [6.506364922206512, 1.3579705933006465],
-                   [6.845827439886847, 2.148948034692836],
-                   [7.77934936350778, 2.7449738151212433],
-                   [8.543140028288544, 2.6218307403757986],
-                   [9.561527581329564, 2.0525434471508692],
-                   [11.173974540311175, 1.2388629239937763],
-                   [12.701555869872706, 0.7828664968878465],
-                   [14.398868458274404, 0.4947116747780942],
-                   [16.859971711456865, 0.2895969742197884],
-                   [19.66053748231967, 0.17748817964452962],
-                   [22.206506364922213, 0.12773570001722281],
-                   [24.837340876944843, 0.10389898279212807],
-                   [27.722772277227726, 0.1087789470121345],
-                   [30.183875530410184, 0.13070104796093673],
-                   [32.729844413012735, 0.16441704701060267],
-                   [34.85148514851486, 0.16695189854274867],
-                   [37.397454031117405, 0.12107555776371784],
-                   [39.26449787835927, 0.08010405199404155],
-                   [41.30127298444131, 0.049851062445855264],
-                   [43.592644978783596, 0.029631988560550687],
-                   [45.629420084865636, 0.018440841322693136],
-                   [48.0905233380481, 0.011832859313068754],
-                   [50.891089108910904, 0.007949361111716631],
-                   [53.77652050919379, 0.005764973856945108],
-                   [57.25601131541727, 0.0043438393396653925],
-                   [61.923620933521946, 0.0032730313574784275],
-                   [66.67609618104669, 0.0024851284269805634],
-                   [70.66478076379069, 0.002068305171949823],
-                   [74.82319660537483, 0.0016952583040389245],
-                   [78.72701555869875, 0.0013476220436441713],
-                   [81.27298444130128, 0.0010389898279212807]])
+plt.rc('font', family='serif')
+plt.rcParams['text.usetex'] = False
+fs = 12
+
+# update various fontsizes to match
+params = {'figure.figsize': (6,4),
+          'legend.fontsize': fs,
+          'axes.labelsize': fs,
+          'xtick.labelsize': 0.7 * fs,
+          'ytick.labelsize': 0.7 * fs}
+plt.rcParams.update(params)
+
+def get_LIGO_rate(down_samp_fac=1):
+    # this is lifted ~exactly~ from the GWTC-3 tutorial
+    mass_PP_path = paths.data / "o1o2o3_mass_c_iid_mag_iid_tilt_powerlaw_redshift_mass_data.h5"
+    with open(mass_PP_path, 'r') as _data:
+        _data = dd.io.load(mass_PP_path)
     
-    mass = dat[:,0]
-    rate = dat[:,1]
-    interp_rate = interp1d(mass, rate)
+    #import pdb
+    #pdb.set_trace()
+    dN_dm1dqdVcdt = _data['ppd'].T
+    mass_1 = np.linspace(2, 100, 1000)
+    mass_ratio = np.linspace(0.1, 1, 500)
+    M1, Q = np.meshgrid(mass_1, mass_ratio, indexing='ij')
     
-    return interp_rate(m1)
+    if down_samp_fac > 1:
+        mass_1 = mass_1[::down_samp_fac]
+        mass_ratio = mass_ratio[::down_samp_fac]
+        M1 = M1[::down_samp_fac, ::down_samp_fac]
+        Q = Q[::down_samp_fac, ::down_samp_fac]
+        dN_dm1dqdVcdt = dN_dm1dqdVcdt[::down_samp_fac, ::down_samp_fac]
 
-# set up the grids
-f = np.logspace(-1, -5, 150) * u.Hz
-masses = np.arange(5, 80.2, 0.05)
-m_c = lw.utils.chirp_mass(masses, masses)
+    return mass_1*u.Msun, mass_ratio, M1*u.Msun, Q, dN_dm1dqdVcdt*u.Msun**(-1) * u.Gpc**(-3) * u.yr**(-1)
 
-# set up bins
-delta_m = np.mean(masses[1:] - masses[:-1])/2
-mass_bins = np.arange(min(masses) - delta_m, max(masses) + 3 * delta_m, 2*delta_m)
-masses = masses * u.Msun
-mass_bins = mass_bins * u.Msun
+def get_horizon_and_chirp(dat_in):
+    m1, q, f = dat_in
+    m2 = m1 * q
+    mc = lw.utils.chirp_mass(m1, m2)
 
-# get the meshgrid
-F, MASS = np.meshgrid(f, masses)
-MC = lw.utils.chirp_mass(MASS, MASS)
-RATE = ligo_rate(MASS.flatten().value)
-RATE = RATE.reshape(MC.shape) * u.Gpc**(-3) * u.yr**(-1) * u.Msun**(-1)
+    s = lw.source.Source(m_1=m1 * np.ones(len(f)),
+                         m_2=m2 * np.ones(len(f)),
+                         ecc=np.zeros(len(f)),
+                         f_orb=f,
+                         dist=8 * np.ones(len(f)) * u.Mpc,
+                         interpolate_g=False,
+                         gw_lum_tol=0.001)
+    
+    
+    snr = s.get_snr(t_obs = 6 * u.yr, approximate_R=True, verbose=False)
+    d_h_1 = snr * 8 * u.Mpc
+    d_h_7 = snr / 7 * 8 * u.Mpc    
+    d_h_12 = snr / 12 * 8 * u.Mpc
+    
+    
+    d_h_list = [d_h_1.to(u.Gpc), d_h_7.to(u.Gpc), d_h_12.to(u.Gpc)]
+    V_h_list = []
+    for d_h in d_h_list:
+        V_h = 4/3 * np.pi * d_h**3
 
-# get the horizon distance
-source = lw.source.Source(m_1=MASS.flatten(),
-                          m_2=MASS.flatten(),
-                          ecc=np.zeros(len(F.flatten())),
-                          f_orb=F.flatten(),
-                          dist=8 * np.ones(len(F.flatten())) * u.Mpc,
-                          interpolate_g=False,
-                          n_proc=1)
-snr = source.get_snr(approximate_R=False, verbose=True)
-SNR_resolve = 12
-D_h = snr/SNR_resolve * 8 * u.Mpc
-horizon_comoving_volume = 4/3 * np.pi * D_h**3
-redshift = np.ones(len(D_h)) * 1e-8
-redshift[D_h > 0.0001 * u.Mpc] = z_at_value(Planck18.luminosity_distance, D_h[D_h > 0.0001 * u.Mpc])
-horizon_comoving_volume[D_h > 0.0001 * u.Mpc] = Planck18.comoving_volume(z=redshift[D_h > 0.0001 * u.Mpc])
-horizon_comoving_volume = horizon_comoving_volume.reshape(RATE.shape)
-#D_h = D_h.reshape(RATE.shape)
+        d_mask = d_h > 100 * u.kpc
+        redshift = np.ones(len(d_h)) * 1e-8
+        redshift[d_mask] = z_at_value(Planck18.luminosity_distance, d_h[d_mask])
+        V_h[d_mask] = Planck18.comoving_volume(z=redshift[d_mask])
+        
+        V_h_list.append(V_h.to(u.Gpc**3))
 
-# calculate the chirp
-f_dot = lw.utils.fn_dot(m_c = MC.flatten(), e = np.zeros(len(MC.flatten())), n=2, f_orb=F.flatten())
-f_dot = f_dot.reshape(F.shape)
+    f_dot = lw.utils.fn_dot(m_c=mc, e=np.zeros(len(f)), n=1, f_orb=f)
+    
+    d_h_list = [d_h.value for d_h in d_h_list]
+    V_h_list = [V_h.value for V_h in V_h_list]
+    
+    return d_h_list, V_h_list, f_dot.to(u.Hz/u.s).value
+
+
+# set up the LISA frequency grid
+f_LISA_grid = np.logspace(-1, -5, 500) * u.Hz
+
+
+# get the mass, mass ratio, and rate grids
+down_samp_fac=10
+mass_1, mass_ratio, M1, Q, dN_dm1dqdVcdt = get_LIGO_rate(down_samp_fac=down_samp_fac)
+
+# run on 98 processors
+nproc=128
+
+# loop over the mass and mass ratio grid to get the horizon distance
+dat_in = []
+for m1, q in zip(M1.flatten(), Q.flatten()):
+    dat_in.append([m1, q, f_LISA_grid])
+    
+with MultiPool(processes=nproc) as pool:
+    dat_out = list(tqdm.tqdm(pool.imap(get_horizon_and_chirp, dat_in), total=len(dat_in)))
+
+D_H_1 = []
+D_H_7 = []
+D_H_12 = []
+V_H_1 = []
+V_H_7 = []
+V_H_12 = []
+F_DOT = []
+for d in dat_out:
+    d_h, V_h, f_dot = d
+
+    D_H_1.append(d_h[0])
+    D_H_7.append(d_h[1])
+    D_H_12.append(d_h[2])
+
+    V_H_1.append(V_h[0])
+    V_H_7.append(V_h[1])
+    V_H_12.append(V_h[2])
+    
+    F_DOT.append(f_dot)
+    
+D_H_1 = np.reshape(D_H_1, (len(mass_1), len(mass_ratio), len(f_LISA_grid))) * u.Gpc    
+V_H_1 = np.reshape(V_H_1, (len(mass_1), len(mass_ratio), len(f_LISA_grid))) * u.Gpc**3    
+D_H_7 = np.reshape(D_H_7, (len(mass_1), len(mass_ratio), len(f_LISA_grid))) * u.Gpc    
+V_H_7 = np.reshape(V_H_7, (len(mass_1), len(mass_ratio), len(f_LISA_grid))) * u.Gpc**3    
+D_H_12 = np.reshape(D_H_12, (len(mass_1), len(mass_ratio), len(f_LISA_grid))) * u.Gpc    
+V_H_12 = np.reshape(V_H_12, (len(mass_1), len(mass_ratio), len(f_LISA_grid))) * u.Gpc**3    
+F_DOT = np.reshape(F_DOT, (len(mass_1), len(mass_ratio), len(f_LISA_grid))) * u.Hz / u.s
 
 # get the rates
-N_per_mass = np.zeros(len(masses)) * u.Msun**(-1)
-for ii, m in enumerate(masses):
-    N_per_mass[ii] = trapz(RATE[ii,:] / f_dot[ii,:] * horizon_comoving_volume[ii,:], -f)
+dN_dm1_list = []
+N_LISA_obs_list = []
+for v in [V_H_1, V_H_7, V_H_12]:
+    dN_dm1 = np.zeros(len(mass_1)) / u.Msun
+    
+    for ii, m in enumerate(mass_1):
+        dN_dm1dq = np.zeros(len(mass_ratio)) / u.Msun
+        for jj, q in enumerate(mass_ratio):
+            dN_dm1dq[jj] = trapezoid(dN_dm1dqdVcdt[ii,jj] / -F_DOT[ii,jj,:] * v[ii,jj,:], f_LISA_grid).to(1/u.Msun)
+        dN_dm1[ii] = trapezoid(dN_dm1dq, mass_ratio)
+    N_LISA_obs=trapezoid(dN_dm1, mass_1)
+    print(f'The number of LISA sources in total is: {np.round(N_LISA_obs, 2)}')
 
-N_LISA_obs=trapz(N_per_mass, masses)
-print(N_LISA_obs)
-fig, ax = plt.subplots(figsize=(6, 4))
-ax.plot(masses, N_per_mass, lw=3, label=r"LISA")
-ax.plot(masses, ligo_rate(masses)/45, lw=2, label=r"LIGO")
-plt.legend(prop={"size":14})
-plt.tick_params('both', labelsize=12)
+    dN_dm1_list.append(dN_dm1)    
+    N_LISA_obs_list.append(N_LISA_obs)
+dN_dm1_LIGO = trapezoid(dN_dm1dqdVcdt, mass_ratio, axis=1)                        
+
+
+fig, ax1 = plt.subplots(figsize=(6,4))
+
+# Plot data on the first y-axis
+color = 'black'
+ax1.set_xlabel(r'$M_{BH,1}$ [$M_{\odot}$]', size=16)
+ax1.set_ylabel(r'$dN_{\rm{LISA}/dM_{BH,1}}$ [$M_{\odot}^{-1}$]', color=color, size=16)
+for dN_dm1, ls, snr_r, N_LISA_obs in zip(dN_dm1_list, ['-', '--', '-.'], [1,7,12], N_LISA_obs_list):
+    ax1.plot(mass_1, dN_dm1.value, color=color, label=f'SNR > {snr_r}', ls=ls)
+    
+ax1.tick_params(axis='y', labelcolor=color, labelsize=12)
+ax1.set_yscale('log')
+ax1.set_ylim(1e-5, 3e2)
+# Create a second y-axis that shares the same x-axis
+ax2 = ax1.twinx()
+
+# Plot data on the second y-axis
+color = 'navy'
+ax2.set_ylabel(r'$dN_{\rm{LIGO}/dM_{BH,1}}$ [$M_{\odot}^{-1}$]', color=color, size=16)
+ax2.plot(mass_1, dN_dm1_LIGO, color=color)
+ax2.tick_params(axis='y', labelcolor=color, labelsize=12)
+ax2.set_yscale('log')
+ax2.set_ylim(5e-5, 7)
 plt.minorticks_on()
-ax.set_xlabel('mass [Msun]', size=16)
-ax.set_ylabel('p(M) [M$_{\odot}^{-1}$]', size=16)
-plt.tight_layout()
-plt.savefig(paths.figures / 'fig1.png', facecolor='white', dpi=100)
+ax1.set_xlim(0, 95)
+ax1.legend(prop={"size":12}, ncol=3, loc=(0, 1.01))
+
+
+#plt.minorticks_on()
+fig.tight_layout()
+fig.savefig(paths.figures / 'fig1.png', facecolor='white', dpi=100)
+    
