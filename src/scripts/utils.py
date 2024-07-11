@@ -107,9 +107,9 @@ def get_horizon(m1, m2, e, f_orb, snr_thresh=12):
                               f_orb=f_orb,
                               dist=8 * u.Mpc,
                               interpolate_g=False,
-                              gw_lum_tol=0.001)
+                              gw_lum_tol=0.05)
 
-    snr = source.get_snr(approximate_R=True, verbose=False, t_obs=6*u.yr)
+    snr = source.get_snr(approximate_R=True, verbose=False, t_obs=8*u.yr)
 
     d_horizon = snr / snr_thresh * 8 * u.Mpc
 

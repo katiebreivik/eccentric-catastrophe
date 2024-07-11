@@ -35,16 +35,16 @@ e_LIGO_round = np.array([f"{e:.2e}" for e in e_LIGO])
 
 
 # get the mass, mass ratio, and rate grids
-down_samp_fac=10
+down_samp_fac=25
 mass_1, mass_ratio, M1, Q, dN_dm1dqdVcdt = utils.get_LIGO_rate(down_samp_fac=down_samp_fac)
 
 mass_1 = mass_1
 mass_ratio = mass_ratio
 MM, QQ, EE_LIGO, FF = np.meshgrid(mass_1, mass_ratio, e_LIGO, f_LISA, indexing='ij')
 
-'''dat_in = list(zip(EE_LIGO.flatten(), FF.flatten(), MM.flatten(), QQ.flatten()*MM.flatten()))
+dat_in = list(zip(EE_LIGO.flatten(), FF.flatten(), MM.flatten(), QQ.flatten()*MM.flatten()))
 
-with MultiPool(processes=128) as pool:
+with MultiPool(processes=96) as pool:
     dat_out = list(tqdm.tqdm(pool.imap(utils.get_e_LISA_t_LIGO, dat_in), total=len(dat_in)))
     
 EE_LISA, TT_LIGO = zip(*dat_out)
@@ -54,8 +54,6 @@ TT_LIGO = np.array(TT_LIGO).reshape(FF.shape) * u.yr
 
 np.save(paths.data / 't_merge', TT_LIGO.value)
 np.save(paths.data / 'e_LISA', EE_LISA)
-'''
-EE_LISA = np.load(paths.data / 'e_LISA.npy')
 
 def chunk_list(long_list, num_chunks):
     avg = len(long_list) / float(num_chunks)
@@ -78,10 +76,10 @@ chunked_list = chunk_list(dat_in, num_chunks)
 dat_list = []
 for ii, chunk in enumerate(chunked_list):
     print('running chunk: ' + str(ii))
-    with MultiPool(processes=125) as pool:
+    with MultiPool(processes=96) as pool:
         dat_out = list(tqdm.tqdm(pool.imap(utils.get_Vc_Dh, chunk), total=len(chunk)))
         dat_list.extend(dat_out)
-DH, VC = zip(*dat_out)
+DH, VC = zip(*dat_list)
 DH = np.array(DH).reshape(QQ.shape) * u.Gpc
 VC = np.array(VC).reshape(QQ.shape) * u.Gpc**3
 

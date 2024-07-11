@@ -59,7 +59,7 @@ def get_horizon_and_chirp(dat_in):
                          gw_lum_tol=0.001)
     
     
-    snr = s.get_snr(t_obs = 6 * u.yr, approximate_R=True, verbose=False)
+    snr = s.get_snr(t_obs = 8 * u.yr, approximate_R=True, verbose=False)
     d_h_1 = snr * 8 * u.Mpc
     d_h_7 = snr / 7 * 8 * u.Mpc    
     d_h_12 = snr / 12 * 8 * u.Mpc
@@ -90,7 +90,7 @@ f_LISA_grid = np.logspace(-1, -5, 500) * u.Hz
 
 
 # get the mass, mass ratio, and rate grids
-down_samp_fac=10
+down_samp_fac=15
 mass_1, mass_ratio, M1, Q, dN_dm1dqdVcdt = get_LIGO_rate(down_samp_fac=down_samp_fac)
 
 # run on 98 processors
@@ -156,7 +156,7 @@ fig, ax1 = plt.subplots(figsize=(6,4))
 # Plot data on the first y-axis
 color = 'black'
 ax1.set_xlabel(r'$M_{BH,1}$ [$M_{\odot}$]', size=16)
-ax1.set_ylabel(r'$dN_{\rm{LISA}/dM_{BH,1}}$ [$M_{\odot}^{-1}$]', color=color, size=16)
+ax1.set_ylabel(r'$dN_{\rm{LISA}}/dM_{BH,1}$ [$M_{\odot}^{-1}$]', color=color, size=16)
 for dN_dm1, ls, snr_r, N_LISA_obs in zip(dN_dm1_list, ['-', '--', '-.'], [1,7,12], N_LISA_obs_list):
     ax1.plot(mass_1, dN_dm1.value, color=color, label=f'SNR > {snr_r}', ls=ls)
     
@@ -168,7 +168,7 @@ ax2 = ax1.twinx()
 
 # Plot data on the second y-axis
 color = 'navy'
-ax2.set_ylabel(r'$dN_{\rm{LIGO}/dM_{BH,1}}$ [$M_{\odot}^{-1}$]', color=color, size=16)
+ax2.set_ylabel(r'$dN_{\rm{intrinsic}}/dM_{BH,1}$ [$M_{\odot}^{-1}$]', color=color, size=16)
 ax2.plot(mass_1, dN_dm1_LIGO, color=color)
 ax2.tick_params(axis='y', labelcolor=color, labelsize=12)
 ax2.set_yscale('log')
@@ -180,5 +180,5 @@ ax1.legend(prop={"size":12}, ncol=3, loc=(0, 1.01))
 
 #plt.minorticks_on()
 fig.tight_layout()
-fig.savefig(paths.figures / 'fig1.png', facecolor='white', dpi=100)
+fig.savefig(paths.figures / 'fig1_8yr.png', facecolor='white', dpi=100)
     
