@@ -79,7 +79,7 @@ def get_e_LISA_t_LIGO(dat_in):
     return e_LISA, T_LIGO
 
 
-def get_LIGO_rate(down_samp_fac=1):
+def get_LIGO_rate(down_samp_fac_m1=1, down_samp_fac_q=1):
     import deepdish as dd
      # this is lifted ~exactly~ from the GWTC-3 tutorial
     mass_PP_path = paths.data / "o1o2o3_mass_c_iid_mag_iid_tilt_powerlaw_redshift_mass_data.h5"
@@ -89,14 +89,14 @@ def get_LIGO_rate(down_samp_fac=1):
     dN_dm1dqdVcdt = _data['ppd']
     mass_1 = np.linspace(2, 100, 1000)
     mass_ratio = np.linspace(0.1, 1, 500)
-    M1, Q = np.meshgrid(mass_1, mass_ratio)
+    M1, Q = np.meshgrid(mass_1, mass_ratio, indexing='ij')
     
-    if down_samp_fac > 1:
-        mass_1 = mass_1[::down_samp_fac]
-        mass_ratio = mass_ratio[::down_samp_fac]
-        M1 = M1[::down_samp_fac, ::down_samp_fac]
-        Q = Q[::down_samp_fac, ::down_samp_fac]
-        dN_dm1dqdVcdt = dN_dm1dqdVcdt[::down_samp_fac, ::down_samp_fac]
+    if down_samp_fac_m1 > 1:
+        mass_1 = mass_1[::down_samp_fac_m1]
+        mass_ratio = mass_ratio[::down_samp_fac_q]
+        M1 = M1[::down_samp_fac_m1, ::down_samp_fac_q]
+        Q = Q[::down_samp_fac_m1, ::down_samp_fac_q]
+        dN_dm1dqdVcdt = dN_dm1dqdVcdt[::down_samp_fac_m1, ::down_samp_fac_q]
 
     return mass_1*u.Msun, mass_ratio, M1*u.Msun, Q, dN_dm1dqdVcdt*u.Msun**(-1) * u.Gpc**(-3) * u.yr**(-1)
 
