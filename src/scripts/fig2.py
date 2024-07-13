@@ -29,17 +29,16 @@ plt.rcParams.update(params)
 f_LISA = np.logspace(-1, -5, 150) * u.Hz
 
 # set up the LIGO eccentricity range
-e_LIGO = np.logspace(-6, np.log10(0.0005), 10)
+e_LIGO = np.logspace(-6, np.log10(0.001), 20)
 e_LIGO = np.append(0, e_LIGO)
 e_LIGO_round = np.array([f"{e:.2e}" for e in e_LIGO])
 
 
 # get the mass, mass ratio, and rate grids
-down_samp_fac=25
-mass_1, mass_ratio, M1, Q, dN_dm1dqdVcdt = utils.get_LIGO_rate(down_samp_fac=down_samp_fac)
+down_samp_fac_q=30
+down_samp_fac_m1=15
+mass_1, mass_ratio, M1, Q, dN_dm1dqdVcdt = utils.get_LIGO_rate(down_samp_fac_m1=down_samp_fac_m1, down_samp_fac_q=down_samp_fac_q)
 
-mass_1 = mass_1
-mass_ratio = mass_ratio
 MM, QQ, EE_LIGO, FF = np.meshgrid(mass_1, mass_ratio, e_LIGO, f_LISA, indexing='ij')
 
 dat_in = list(zip(EE_LIGO.flatten(), FF.flatten(), MM.flatten(), QQ.flatten()*MM.flatten()))
@@ -52,8 +51,8 @@ EE_LISA, TT_LIGO = zip(*dat_out)
 EE_LISA = np.array(EE_LISA).reshape(FF.shape)
 TT_LIGO = np.array(TT_LIGO).reshape(FF.shape) * u.yr
 
-np.save(paths.data / 't_merge', TT_LIGO.value)
-np.save(paths.data / 'e_LISA', EE_LISA)
+np.save(paths.data / 't_merge_run2', TT_LIGO.value)
+np.save(paths.data / 'e_LISA_run2', EE_LISA)
 
 def chunk_list(long_list, num_chunks):
     avg = len(long_list) / float(num_chunks)
@@ -83,8 +82,8 @@ DH, VC = zip(*dat_list)
 DH = np.array(DH).reshape(QQ.shape) * u.Gpc
 VC = np.array(VC).reshape(QQ.shape) * u.Gpc**3
 
-np.save(paths.data / f'comoving_volume_{ii}', VC.value)
-np.save(paths.data / f'horizon_distance_{ii}', DH.value)
+np.save(paths.data / f'comoving_volume_run2', VC.value)
+np.save(paths.data / f'horizon_distance_run2', DH.value)
 
 #dT_LIGO_df_LISA = utils.dTmerger_df(MM, QQ*MM, FF, EE_LISA).to(u.yr / u.Hz)
 
